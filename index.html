@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battery Compatibility Lookup</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background: url('https://cdn.abacus.ai/images/336dcf84-586a-43fe-9c9d-9264e3aef1da.png') center center / cover no-repeat fixed; 
+      margin: 0; 
+      padding: 0; 
+    }
+    .container { 
+      max-width: 500px; 
+      margin: 60px auto; 
+      background: #fff; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 8px #0001; 
+      padding: 32px; 
+      border: 2px solid #ff9800; 
+    }
+    h1 { text-align: center; color: #ff9800; }
+    .search-bar { 
+      width: 100%; 
+      padding: 12px; 
+      font-size: 1.1em; 
+      border: 2px solid #90caf9; 
+      border-radius: 5px; 
+      margin-bottom: 8px; 
+      background: #f7fbff; 
+      transition: border 0.2s; 
+    }
+    .search-bar:focus { border: 2px solid #ff9800; outline: none; }
+    .suggestions { 
+      border: 2px solid #90caf9; 
+      border-top: none; 
+      border-radius: 0 0 5px 5px; 
+      max-height: 180px; 
+      overflow-y: auto; 
+      background: #fff; 
+      position: absolute; 
+      width: 100%; 
+      z-index: 10; 
+      box-shadow: 0 2px 8px #0001; 
+    }
+    .suggestion { padding: 10px; cursor: pointer; color: #1565c0; }
+    .suggestion:hover { background: #ffecb3; color: #ff9800; }
+    .result { 
+      margin-top: 24px; 
+      background: #fff3e0; 
+      border-radius: 6px; 
+      padding: 18px; 
+      font-size: 1.1em; 
+      color: #1565c0; 
+      border: 1.5px solid #90caf9; 
+    }
+    .label { font-weight: bold; color: #ff9800; }
+    .relative { position: relative; }
+    
+    /* Hamburger Menu Styles */
+    .hamburger {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+    .hamburger span {
+      display: block;
+      height: 3px;
+      width: 100%;
+      background: #ff9800;
+      border-radius: 2px;
+      transition: 0.3s;
+    }
+    .hamburger.active span:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+    .hamburger.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -6px);
+    }
+    
+    /* Sidebar Styles */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 300px;
+      height: 100vh;
+      background: #fff;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      transition: left 0.3s ease;
+      z-index: 999;
+      padding-top: 80px;
+      border-right: 2px solid #ff9800;
+    }
+    .sidebar.active {
+      left: 0;
+    }
+    .sidebar-item {
+      padding: 15px 25px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+      color: #1565c0;
+      font-size: 1.1em;
+      transition: background 0.2s;
+    }
+    .sidebar-item:hover {
+      background: #ffecb3;
+      color: #ff9800;
+    }
+    .sidebar-item.active {
+      background: #fff3e0;
+      color: #ff9800;
+      font-weight: bold;
+      border-left: 4px solid #ff9800;
+    }
+    
+    /* Overlay */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.5);
+      z-index: 998;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    /* Page Styles */
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+    
+    @media (max-width: 600px) { 
+      .container { padding: 16px; margin: 80px auto 60px; }
+      .sidebar { width: 250px; left: -250px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hamburger Menu -->
+  <div class="hamburger" id="hamburger">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+  
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-item active" data-page="battery-lookup">Battery Compatibility Lookup</div>
+    <div class="sidebar-item" data-page="device-lookup">Device Compatibility Lookup</div>
+  </div>
+  
+  <!-- Overlay -->
+  <div class="overlay" id="overlay"></div>
+  
+  <!-- Page 1: Battery Compatibility Lookup -->
+  <div class="page active" id="battery-lookup">
+    <div class="container">
+      <h1>Battery Compatibility Lookup</h1>
+      <div class="relative">
+        <input type="text" id="deviceInput" class="search-bar" placeholder="Type your device model..." autocomplete="off" />
+        <div id="deviceSuggestions" class="suggestions" style="display:none;"></div>
+      </div>
+      <div id="deviceResult" class="result" style="display:none;"></div>
+    </div>
+  </div>
+  
+  <!-- Page 2: Device Compatibility Lookup -->
+  <div class="page" id="device-lookup">
+    <div class="container">
+      <h1>Device Compatibility Lookup</h1>
+      <div class="relative">
+        <input type="text" id="batteryInput" class="search-bar" placeholder="Type battery part number, MPN, or type model..." autocomplete="off" />
+        <div id="batterySuggestions" class="suggestions" style="display:none;"></div>
+      </div>
+      <div id="batteryResult" class="result" style="display:none;"></div>
+    </div>
+  </div>
+  
+  <script>
+// Data: Combined ThinkPad E, T, ThinkBook, Dell, and all X1 Carbon/Yoga/Yoga models
+const data = `
+(Device: Lenovo ThinkPad E14 Gen 1 Battery Compatibility: L19M3PD4)
+(Device: Lenovo ThinkPad E14 Gen 2 Battery Compatibility: L20M3PD4)
+(Device: Lenovo ThinkPad E14 Gen 3 Battery Compatibility: L20M3PD4)
+(Device: Lenovo ThinkPad E14 Gen 4 Battery Compatibility: L20M3PD4)
+(Device: Lenovo ThinkPad E14 Gen 5 Battery Compatibility: L22X3PG4, L22M3PG5)
+(Device: Lenovo ThinkPad E14 Gen 6 Battery Compatibility: L22X3PG4, L22M3PG5)
+(Device: Lenovo ThinkPad E14 Gen 7 Battery Compatibility: L22X3PG4, L22M3PG5)
+(Device: Lenovo ThinkPad E15 Gen 1 Battery Compatibility: L19M3PD4)
+(Device: Lenovo ThinkPad E15 Gen 2 Battery Compatibility: L20M3PD4)
+(Device: Lenovo ThinkPad E15 Gen 3 Battery Compatibility: L20M3PD4)
+(Device: Lenovo ThinkPad E15 Gen 4 Battery Compatibility: L20M3PD4)
+(Device: Lenovo ThinkPad E15 Gen 5 Battery Compatibility: L22M3PG5)
+(Device: Lenovo ThinkPad E15 Gen 6 Battery Compatibility: L22M3PG5)
+(Device: Lenovo ThinkPad E16 Gen 1 Battery Compatibility: L22X3PG4, L22M3PG5)
+(Device: Lenovo ThinkPad E16 Gen 2 Battery Compatibility: L23X3PG2, L22M3PG5)
+(Device: Lenovo ThinkPad E16 Gen 3 Battery Compatibility: L23X3PG2, L22M3PG5)
+(Device: Lenovo ThinkPad T14 Gen 1 Battery Compatibility: L18M3P73, L18L3P73)
+(Device: Lenovo ThinkPad T14 Gen 2 Battery Compatibility: L18M3P73, L18L3P73)
+(Device: Lenovo ThinkPad T14 Gen 3 Battery Compatibility: L21M4P75, 5B10W51874)
+(Device: Lenovo ThinkPad T14 Gen 4 Battery Compatibility: L21M4P75, 5B10W51874)
+(Device: Lenovo ThinkPad T14 Gen 5 Battery Compatibility: L21M4P75, 5B10W51874)
+(Device: Lenovo ThinkPad T14 Gen 6 Battery Compatibility: L21M4P75, 5B10W51874)
+(Device: Lenovo ThinkPad T14s Gen 1 Battery Compatibility: L18M3PD1, L18C3PD2)
+(Device: Lenovo ThinkPad T14s Gen 2 Battery Compatibility: L18M3PD2, SB10K97654)
+(Device: Lenovo ThinkPad T14s Gen 3 Battery Compatibility: L21M4P75, 5B10W51874)
+(Device: Lenovo ThinkPad T14s Gen 4 Battery Compatibility: L21M4P75, 5B10W51874)
+(Device: Lenovo ThinkPad T14s Gen 5 Battery Compatibility: L21M4P75, 5B10W51874)
+(Device: Lenovo ThinkPad T14s Gen 6 Battery Compatibility: L21M4P75, 5B10W51874)
+(Device: Lenovo ThinkBook 13s Gen 1 Battery Compatibility: L18M4PF0, L18C4PF0, L18D4PF0)
+(Device: Lenovo ThinkBook 13s Gen 2 Battery Compatibility: L19M4PDD, L19C4PDD)
+(Device: Lenovo ThinkBook 13s Gen 3 Battery Compatibility: L21M4PDD)
+(Device: Lenovo ThinkBook 14 Gen 1 Battery Compatibility: L19D3PF2)
+(Device: Lenovo ThinkBook 14 Gen 2 Battery Compatibility: L19M3PF2)
+(Device: Lenovo ThinkBook 14 Gen 3 Battery Compatibility: L19L3PF1)
+(Device: Lenovo ThinkBook 14 Gen 4 Battery Compatibility: L19C4PDB, L19M4PDB)
+(Device: Lenovo ThinkBook 14 Gen 5 Battery Compatibility: L19C4PDB, L19M4PDB)
+(Device: Lenovo ThinkBook 14s Yoga Gen 1 Battery Compatibility: L19C4PDB, L19M4PDB)
+(Device: Lenovo ThinkBook 15 Gen 1 Battery Compatibility: L19M3PF9, L19C3PF1)
+(Device: Lenovo ThinkBook 15 Gen 2 Battery Compatibility: L19L3PDA, L19C3PDA)
+(Device: Lenovo ThinkBook 15 Gen 3 Battery Compatibility: L19L3PDA, L19C3PDA)
+(Device: Lenovo ThinkBook 15 Gen 4 Battery Compatibility: L19L3PDA, L19C3PDA)
+(Device: Lenovo ThinkBook 15 Gen 5 Battery Compatibility: L19L3PDA, L19C3PDA)
+(Device: Lenovo ThinkBook 15p Gen 1 Battery Compatibility: L20M4PE1, L20L4PE1)
+(Device: Lenovo ThinkBook 16 Gen 1 Battery Compatibility: L21L4PD8, L21M4PD8)
+(Device: Lenovo ThinkBook 16 Gen 2 Battery Compatibility: L21L4PD8, L21M4PD8)
+(Device: Lenovo ThinkBook 16 Gen 3 Battery Compatibility: L21L4PD8, L21M4PD8)
+(Device: Lenovo ThinkBook 16 Gen 4+ Battery Compatibility: L21L4PD8, L21M4PD8)
+(Device: Lenovo ThinkBook 16p Gen 1 Battery Compatibility: L20M4PE1, L20L4PE1)
+(Device: Lenovo ThinkBook 16p Gen 2 Battery Compatibility: L20M4PE1, L20L4PE1)
+(Device: Lenovo ThinkBook 16p Gen 3 Battery Compatibility: L20M4PE1, L20L4PE1)
+(Device: Lenovo ThinkBook 17 Gen 1 Battery Compatibility: L21L4PD8, L21M4PD8)
+(Device: Lenovo ThinkBook Plus Gen 1 Battery Compatibility: L22L4PG3, L22M4PG3)
+(Device: Lenovo ThinkBook Plus Gen 2 Battery Compatibility: L22L4PG3, L22M4PG3)
+(Device: Lenovo ThinkBook Plus Gen 3 Battery Compatibility: L22L4PG3, L22M4PG3)
+(Device: Lenovo ThinkBook Yoga Gen 1 Battery Compatibility: L19C4PDB, L19M4PDB)
+
+(Device: Lenovo ThinkPad X1 Carbon Gen 1 Battery Compatibility: 45N1070)
+(Device: Lenovo ThinkPad X1 Carbon Gen 2 Battery Compatibility: 45N1071)
+(Device: Lenovo ThinkPad X1 Carbon Gen 3 Battery Compatibility: 45N1773)
+(Device: Lenovo ThinkPad X1 Carbon Gen 4 Battery Compatibility: 01AV430)
+(Device: Lenovo ThinkPad X1 Carbon Gen 5 Battery Compatibility: 01AV431)
+(Device: Lenovo ThinkPad X1 Carbon Gen 6 Battery Compatibility: 01AV494)
+(Device: Lenovo ThinkPad X1 Carbon Gen 7 Battery Compatibility: L18C4P71 L18L4P71)
+(Device: Lenovo ThinkPad X1 Carbon Gen 8 Battery Compatibility: L18M4P72)
+(Device: Lenovo ThinkPad X1 Carbon Gen 9 Battery Compatibility: L19M4P71)
+(Device: Lenovo ThinkPad X1 Carbon Gen 10 Battery Compatibility: L20M4P71)
+(Device: Lenovo ThinkPad X1 Carbon Gen 11 Battery Compatibility: L21M4P73)
+(Device: Lenovo ThinkPad X1 Carbon Gen 12 Battery Compatibility: L22M4P73)
+(Device: Lenovo ThinkPad X1 Carbon Gen 13 Aura Battery Compatibility: L23M4P73)
+(Device: Lenovo ThinkPad X1 Yoga Gen 1 Battery Compatibility: 00HW028)
+(Device: Lenovo ThinkPad X1 Yoga Gen 2 Battery Compatibility: 01AV419)
+(Device: Lenovo ThinkPad X1 Yoga Gen 3 Battery Compatibility: 01AV478)
+(Device: Lenovo ThinkPad X1 Yoga Gen 4 Battery Compatibility: 02DL005)
+(Device: Lenovo ThinkPad X1 Yoga Gen 5 Battery Compatibility: L19C4P71)
+(Device: Lenovo ThinkPad X1 Yoga Gen 6 Battery Compatibility: L19C4P71)
+(Device: Lenovo ThinkPad X1 Yoga Gen 7 Battery Compatibility: L20C4P73)
+(Device: Lenovo ThinkPad X1 Yoga Gen 8 Battery Compatibility: L21C4P73)
+(Device: Lenovo ThinkPad X1 Yoga Gen 9 Battery Compatibility: L22C4P73)
+(Device: Lenovo ThinkPad X1 Yoga Gen 10 Battery Compatibility: L23C4P73)
+(Device: Lenovo ThinkPad Yoga 260 Battery Compatibility: 00HW022)
+(Device: Lenovo ThinkPad Yoga 370 Battery Compatibility: 01AV405)
+(Device: Lenovo ThinkPad X13 Yoga Gen 1 Battery Compatibility: L19M3P71)
+(Device: Lenovo ThinkPad X13 Yoga Gen 2 Battery Compatibility: L20M3P71)
+(Device: Lenovo ThinkPad X13 Yoga Gen 3 Battery Compatibility: L21M3P71)
+(Device: Lenovo ThinkPad X13 Yoga Gen 4 Battery Compatibility: L22M3P71)
+(Device: Lenovo ThinkPad L13 Yoga Gen 1 Battery Compatibility: L19M3P71)
+(Device: Lenovo ThinkPad L13 Yoga Gen 2 Battery Compatibility: L20M3P71)
+(Device: Lenovo ThinkPad L13 Yoga Gen 3 Battery Compatibility: L21M3P71)
+(Device: Lenovo ThinkPad L13 Yoga Gen 4 Battery Compatibility: L22M3P71)
+(Device: Lenovo ThinkPad L380 Yoga Battery Compatibility: L17M3P71)
+(Device: Lenovo ThinkPad X380 Yoga Battery Compatibility: L17C3P71)
+(Device: Lenovo ThinkPad L390 Yoga Battery Compatibility: L18M3P71)
+(Device: Lenovo ThinkPad X390 Yoga Battery Compatibility: L18C3P71)
+(Device: Lenovo ThinkPad 11e Yoga Gen 6 Battery Compatibility: L19M3PF1)
+(Device: Lenovo ThinkPad 11e Yoga Gen 5 Battery Compatibility: L18M3PF1)
+(Device: Lenovo ThinkPad 11e Yoga Gen 4 Battery Compatibility: L17M3PF1)
+(Device: Lenovo ThinkPad 11e Yoga Gen 3 Battery Compatibility: L16M3PF1)
+(Device: Lenovo ThinkPad 11e Yoga Gen 2 Battery Compatibility: L15M3PF1)
+
+(Device: Dell Latitude 9440 Battery Compatibility: Type GT6TK)
+(Device: Dell Latitude 9430 Battery Compatibility: Type GT6TK)
+(Device: Dell Latitude 9420 Battery Compatibility: Type GT6TK)
+(Device: Dell Latitude 7440 Battery Compatibility: Type 34GKR, Type 3RNFD, Type PFXCR)
+(Device: Dell Latitude 7430 Battery Compatibility: Type 34GKR, Type 3RNFD)
+(Device: Dell Latitude 7420 Battery Compatibility: Type 34GKR, Type 3RNFD)
+(Device: Dell Latitude 7410 Battery Compatibility: Type 34GKR, Type 3RNFD)
+(Device: Dell Latitude 7400 Battery Compatibility: Type 34GKR, Type 3RNFD)
+(Device: Dell Latitude 7390 Battery Compatibility: Type 34GKR, Type 3RNFD)
+(Device: Dell Latitude 7380 Battery Compatibility: Type 34GKR, Type 3RNFD)
+(Device: Dell Latitude 7370 Battery Compatibility: Type 34GKR)
+(Device: Dell Latitude 5540 Battery Compatibility: Type RJ40G, Type 6MT4T)
+(Device: Dell Latitude 5530 Battery Compatibility: Type RJ40G, Type 6MT4T)
+(Device: Dell Latitude 5520 Battery Compatibility: Type RJ40G, Type 6MT4T)
+(Device: Dell Latitude 5510 Battery Compatibility: Type RJ40G, Type 6MT4T)
+(Device: Dell Latitude 5500 Battery Compatibility: Type RJ40G, Type 6MT4T)
+(Device: Dell Latitude 5490 Battery Compatibility: Type RJ40G, Type 6MT4T)
+(Device: Dell Latitude 5480 Battery Compatibility: Type RJ40G, Type 6MT4T)
+(Device: Dell Latitude 5470 Battery Compatibility: Type RJ40G, Type 6MT4T)
+(Device: Dell Latitude 3540 Battery Compatibility: Type JTG7N, Type G91J0)
+(Device: Dell Latitude 3530 Battery Compatibility: Type JTG7N, Type G91J0)
+(Device: Dell Latitude 3520 Battery Compatibility: Type JTG7N, Type G91J0)
+(Device: Dell Latitude 3510 Battery Compatibility: Type JTG7N, Type G91J0)
+(Device: Dell Latitude 3500 Battery Compatibility: Type JTG7N, Type G91J0)
+(Device: Dell Latitude 3490 Battery Compatibility: Type JTG7N, Type G91J0)
+(Device: Dell Latitude 3480 Battery Compatibility: Type JTG7N, Type G91J0)
+(Device: Dell Latitude 3470 Battery Compatibility: Type JTG7N, Type G91J0)
+(Device: Dell XPS 13 9345 Battery Compatibility: Type MN79H)
+(Device: Dell XPS 13 9340 Battery Compatibility: Type MN79H)
+(Device: Dell XPS 13 Plus 9320 Battery Compatibility: Type MN79H)
+(Device: Dell XPS 13 9315 Battery Compatibility: Type (YM15G)
+(Device: Dell XPS 13 9310 Battery Compatibility: Type 4GVGH)
+(Device: Dell XPS 13 2-in-1 9310 Battery Compatibility: Type 4GVGH)
+(Device: Dell XPS 13 9305 Battery Compatibility: Type DXGH8, H754V)
+(Device: Dell XPS 13 9300 Battery Compatibility: Type (722KK or FP86V))
+(Device: Dell XPS 13 7390 Battery Compatibility: Type 4GVGH)
+(Device: Dell XPS 13 2-in-1 7390 Battery Compatibility: Type 4GVGH)
+(Device: Dell XPS 13 9380 Battery Compatibility: Type (722KK or FP86V))
+(Device: Dell XPS 13 9370 Battery Compatibility: Type DXGH8, H754V)
+(Device: Dell XPS 13 2-in-1 9365 Battery Compatibility: Type 90V7W)
+(Device: Dell XPS 13 9360 Battery Compatibility: Type PW23Y)
+(Device: Dell XPS 13 9350 Battery Compatibility: Type JD25G)
+(Device: Dell XPS 13 9343 Battery Compatibility: Type JD25G)
+(Device: Dell XPS 13 9333 Battery Compatibility: Type Y9N00, C4K9V)
+(Device: Dell XPS 13 L322X Battery Compatibility: Type 489XN)
+(Device: Dell XPS 13 L321X Battery Compatibility: Type 489XN)
+(Device: Dell XPS 15 9530 2023 Battery Compatibility: Type 6GTPY, Type 69KF2)
+(Device: Dell XPS 15 9520 Battery Compatibility: Type 6GTPY, Type 69KF2)
+(Device: Dell XPS 15 9510 Battery Compatibility: Type 6GTPY, Type 69KF2)
+(Device: Dell XPS 15 9500 Battery Compatibility: Type 6GTPY, Type 69KF2)
+(Device: Dell XPS 15 7590 Battery Compatibility: Type 6GTPY, Type 69KF2)
+(Device: Dell XPS 15 9570 Battery Compatibility: Type 6GTPY, Type 69KF2)
+(Device: Dell XPS 15 2-in-1 9575 Battery Compatibility: Type 6GTPY, Type 69KF2)
+(Device: Dell XPS 15 9560 Battery Compatibility: Type 6GTPY, Type 69KF2)
+(Device: Dell XPS 15 9550 Battery Compatibility: Type 6GTPY, Type 69KF2)
+(Device: Dell XPS 15 9530 2013 Battery Compatibility: Type 245RR)
+(Device: Dell XPS 15 L521X Battery Compatibility: Type 245RR)
+(Device: Dell XPS 15 L502X Battery Compatibility: Type 312-1123)
+(Device: Dell XPS 15 L501X Battery Compatibility: Type 312-1123)
+`;
+
+// Parse data into arrays
+const deviceBatteryPairs = [];
+const batteryDevicePairs = [];
+const regex = /\(Device: (.*?) Battery Compatibility: (.*?)\)/g;
+let match;
+while ((match = regex.exec(data)) !== null) {
+  const device = match[1];
+  const batteries = match[2].split(', ').map(b => b.trim());
+  
+  deviceBatteryPairs.push({
+    device: device,
+    battery: match[2]
+  });
+  
+  // Create reverse mapping for battery lookup
+  batteries.forEach(battery => {
+    const cleanBattery = battery.replace(/^Type\s+/, '').replace(/^\(/, '').replace(/\)$/, '');
+    const existing = batteryDevicePairs.find(pair => pair.battery === cleanBattery);
+    if (existing) {
+      existing.devices.push(device);
+    } else {
+      batteryDevicePairs.push({
+        battery: cleanBattery,
+        devices: [device]
+      });
+    }
+  });
+}
+
+// Get unique battery parts for suggestions
+const uniqueBatteries = [...new Set(batteryDevicePairs.map(pair => pair.battery))].sort();
+
+// Menu functionality
+const hamburger = document.getElementById('hamburger');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+const sidebarItems = document.querySelectorAll('.sidebar-item');
+const pages = document.querySelectorAll('.page');
+
+hamburger.addEventListener('click', function() {
+  hamburger.classList.toggle('active');
+  sidebar.classList.toggle('active');
+  overlay.classList.toggle('active');
+});
+
+overlay.addEventListener('click', function() {
+  hamburger.classList.remove('active');
+  sidebar.classList.remove('active');
+  overlay.classList.remove('active');
+});
+
+sidebarItems.forEach(item => {
+  item.addEventListener('click', function() {
+    const targetPage = this.getAttribute('data-page');
+    
+    // Update active states
+    sidebarItems.forEach(si => si.classList.remove('active'));
+    this.classList.add('active');
+    
+    pages.forEach(page => page.classList.remove('active'));
+    document.getElementById(targetPage).classList.add('active');
+    
+    // Close menu
+    hamburger.classList.remove('active');
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+    
+    // Clear inputs and results when switching pages
+    clearAllInputsAndResults();
+  });
+});
+
+function clearAllInputsAndResults() {
+  document.getElementById('deviceInput').value = '';
+  document.getElementById('batteryInput').value = '';
+  document.getElementById('deviceSuggestions').style.display = 'none';
+  document.getElementById('batterySuggestions').style.display = 'none';
+  document.getElementById('deviceResult').style.display = 'none';
+  document.getElementById('batteryResult').style.display = 'none';
+}
+
+// Page 1: Device to Battery lookup (original functionality)
+const deviceInput = document.getElementById('deviceInput');
+const deviceSuggestionsDiv = document.getElementById('deviceSuggestions');
+const deviceResultDiv = document.getElementById('deviceResult');
+
+function filterDeviceSuggestions(query) {
+  if (!query) return [];
+  query = query.toLowerCase();
+  return deviceBatteryPairs.filter(pair => pair.device.toLowerCase().includes(query));
+}
+
+function showDeviceSuggestions(suggestions) {
+  if (suggestions.length === 0) {
+    deviceSuggestionsDiv.style.display = 'none';
+    return;
+  }
+  deviceSuggestionsDiv.innerHTML = suggestions.map(s => `<div class="suggestion">${s.device}</div>`).join('');
+  deviceSuggestionsDiv.style.display = 'block';
+}
+
+function showDeviceResult(device, battery) {
+  deviceResultDiv.innerHTML = `<span class='label'>Device:</span> ${device}<br><span class='label'>Battery compatibility:</span> ${battery}`;
+  deviceResultDiv.style.display = 'block';
+}
+
+deviceInput.addEventListener('input', function() {
+  const query = this.value;
+  const suggestions = filterDeviceSuggestions(query).slice(0, 8);
+  showDeviceSuggestions(suggestions);
+  deviceResultDiv.style.display = 'none';
+});
+
+deviceSuggestionsDiv.addEventListener('mousedown', function(e) {
+  if (e.target.classList.contains('suggestion')) {
+    const selectedDevice = e.target.textContent;
+    deviceInput.value = selectedDevice;
+    const found = deviceBatteryPairs.find(pair => pair.device === selectedDevice);
+    if (found) {
+      showDeviceResult(found.device, found.battery);
+    }
+    deviceSuggestionsDiv.style.display = 'none';
+  }
+});
+
+deviceInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const query = this.value.trim();
+    const found = deviceBatteryPairs.find(pair => pair.device.toLowerCase() === query.toLowerCase());
+    if (found) {
+      showDeviceResult(found.device, found.battery);
+      deviceSuggestionsDiv.style.display = 'none';
+    } else {
+      deviceResultDiv.innerHTML = `<span style='color:#b00'>No compatibility info found for this device.</span>`;
+      deviceResultDiv.style.display = 'block';
+    }
+  }
+});
+
+// Page 2: Battery to Device lookup (new functionality)
+const batteryInput = document.getElementById('batteryInput');
+const batterySuggestionsDiv = document.getElementById('batterySuggestions');
+const batteryResultDiv = document.getElementById('batteryResult');
+
+function filterBatterySuggestions(query) {
+  if (!query) return [];
+  query = query.toLowerCase();
+  return uniqueBatteries.filter(battery => battery.toLowerCase().includes(query));
+}
+
+function showBatterySuggestions(suggestions) {
+  if (suggestions.length === 0) {
+    batterySuggestionsDiv.style.display = 'none';
+    return;
+  }
+  batterySuggestionsDiv.innerHTML = suggestions.map(s => `<div class="suggestion">${s}</div>`).join('');
+  batterySuggestionsDiv.style.display = 'block';
+}
+
+function showBatteryResult(battery, devices) {
+  const deviceList = devices.map(device => `• ${device}`).join('<br>');
+  batteryResultDiv.innerHTML = `<span class='label'>Battery:</span> ${battery}<br><span class='label'>Compatible devices:</span><br>${deviceList}`;
+  batteryResultDiv.style.display = 'block';
+}
+
+batteryInput.addEventListener('input', function() {
+  const query = this.value;
+  const suggestions = filterBatterySuggestions(query).slice(0, 8);
+  showBatterySuggestions(suggestions);
+  batteryResultDiv.style.display = 'none';
+});
+
+batterySuggestionsDiv.addEventListener('mousedown', function(e) {
+  if (e.target.classList.contains('suggestion')) {
+    const selectedBattery = e.target.textContent;
+    batteryInput.value = selectedBattery;
+    const found = batteryDevicePairs.find(pair => pair.battery === selectedBattery);
+    if (found) {
+      showBatteryResult(found.battery, found.devices);
+    }
+    batterySuggestionsDiv.style.display = 'none';
+  }
+});
+
+batteryInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const query = this.value.trim();
+    const found = batteryDevicePairs.find(pair => pair.battery.toLowerCase() === query.toLowerCase());
+    if (found) {
+      showBatteryResult(found.battery, found.devices);
+      batterySuggestionsDiv.style.display = 'none';
+    } else {
+      batteryResultDiv.innerHTML = `<span style='color:#b00'>No devices found for this battery.</span>`;
+      batteryResultDiv.style.display = 'block';
+    }
+  }
+});
+
+// Hide suggestions when clicking outside
+window.addEventListener('click', function(e) {
+  if (!document.querySelector('.relative').contains(e.target)) {
+    deviceSuggestionsDiv.style.display = 'none';
+    batterySuggestionsDiv.style.display = 'none';
+  }
+});
+  </script>
+</body>
+</html>
