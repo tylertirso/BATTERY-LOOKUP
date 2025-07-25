@@ -58,6 +58,46 @@
     .label { font-weight: bold; color: #ff9800; }
     .relative { position: relative; }
     
+    /* Link Styles */
+    .clickable-link {
+      color: #1565c0;
+      text-decoration: underline;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .clickable-link:hover {
+      color: #ff9800;
+      text-decoration: underline;
+    }
+    .battery-link {
+      display: inline-block;
+      margin: 2px 4px;
+      padding: 2px 6px;
+      background: #e3f2fd;
+      border-radius: 4px;
+      border: 1px solid #90caf9;
+    }
+    .device-link {
+      display: block;
+      margin: 4px 0;
+      padding: 4px 8px;
+      background: #e8f5e8;
+      border-radius: 4px;
+      border: 1px solid #81c784;
+    }
+    .link-group {
+      display: inline-block;
+      margin-left: 6px;
+    }
+    .link-group a {
+      margin-right: 4px;
+    }
+    .link-label {
+      font-size: 0.95em;
+      color: #888;
+      margin-right: 2px;
+    }
+    
     /* Hamburger Menu Styles */
     .hamburger {
       position: fixed;
@@ -361,6 +401,22 @@ const data = `
 (Device: Dell XPS 15 L501X Battery Compatibility: Type 312-1123)
 `;
 
+// Helper functions to create eBay and Amazon search URLs
+function createEbayUrl(searchTerm) {
+  const cleanTerm = searchTerm.replace(/^Type\s+/, '').replace(/^\(/, '').replace(/\)$/, '');
+  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(cleanTerm + ' laptop battery')}`;
+}
+function createAmazonUrl(searchTerm) {
+  const cleanTerm = searchTerm.replace(/^Type\s+/, '').replace(/^\(/, '').replace(/\)$/, '');
+  return `https://www.amazon.com/s?k=${encodeURIComponent(cleanTerm + ' laptop battery')}`;
+}
+function createDeviceEbayUrl(deviceName) {
+  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(deviceName + ' laptop')}`;
+}
+function createDeviceAmazonUrl(deviceName) {
+  return `https://www.amazon.com/s?k=${encodeURIComponent(deviceName + ' laptop')}`;
+}
+
 // Parse data into arrays
 const deviceBatteryPairs = [];
 const batteryDevicePairs = [];
@@ -463,7 +519,31 @@ function showDeviceSuggestions(suggestions) {
 }
 
 function showDeviceResult(device, battery) {
-  deviceResultDiv.innerHTML = `<span class='label'>Device:</span> ${device}<br><span class='label'>Battery compatibility:</span> ${battery}`;
+  // Create clickable device link group
+  const deviceLinkGroup = `
+    <span class='link-group'>
+      <span class='link-label'>[</span>
+      <a href="${createDeviceEbayUrl(device)}" target="_blank" class="clickable-link">eBay</a>
+      <span class='link-label'>|</span>
+      <a href="${createDeviceAmazonUrl(device)}" target="_blank" class="clickable-link">Amazon</a>
+      <span class='link-label'>]</span>
+    </span>
+  `;
+  // Create clickable battery links group
+  const batteries = battery.split(', ').map(b => b.trim());
+  const batteryLinks = batteries.map(bat => {
+    const cleanBat = bat.replace(/^Type\s+/, '').replace(/^\(/, '').replace(/\)$/, '');
+    return `<span class='link-group battery-link'>
+      ${bat}
+      <span class='link-label'>[</span>
+      <a href="${createEbayUrl(bat)}" target="_blank" class="clickable-link">eBay</a>
+      <span class='link-label'>|</span>
+      <a href="${createAmazonUrl(bat)}" target="_blank" class="clickable-link">Amazon</a>
+      <span class='link-label'>]</span>
+    </span>`;
+  }).join(' ');
+  
+  deviceResultDiv.innerHTML = `<span class='label'>Device:</span> ${device} ${deviceLinkGroup}<br><span class='label'>Battery compatibility:</span><br>${batteryLinks}`;
   deviceResultDiv.style.display = 'block';
 }
 
@@ -521,8 +601,29 @@ function showBatterySuggestions(suggestions) {
 }
 
 function showBatteryResult(battery, devices) {
-  const deviceList = devices.map(device => `• ${device}`).join('<br>');
-  batteryResultDiv.innerHTML = `<span class='label'>Battery:</span> ${battery}<br><span class='label'>Compatible devices:</span><br>${deviceList}`;
+  // Create clickable battery link group
+  const batteryLinkGroup = `
+    <span class='link-group'>
+      <span class='link-label'>[</span>
+      <a href="${createEbayUrl(battery)}" target="_blank" class="clickable-link">eBay</a>
+      <span class='link-label'>|</span>
+      <a href="${createAmazonUrl(battery)}" target="_blank" class="clickable-link">Amazon</a>
+      <span class='link-label'>]</span>
+    </span>
+  `;
+  // Create clickable device links group
+  const deviceLinks = devices.map(device => 
+    `<span class='link-group device-link'>
+      ${device}
+      <span class='link-label'>[</span>
+      <a href="${createDeviceEbayUrl(device)}" target="_blank" class="clickable-link">eBay</a>
+      <span class='link-label'>|</span>
+      <a href="${createDeviceAmazonUrl(device)}" target="_blank" class="clickable-link">Amazon</a>
+      <span class='link-label'>]</span>
+    </span>`
+  ).join('<br>');
+  
+  batteryResultDiv.innerHTML = `<span class='label'>Battery:</span> ${battery} ${batteryLinkGroup}<br><span class='label'>Compatible devices:</span><br>${deviceLinks}`;
   batteryResultDiv.style.display = 'block';
 }
 
