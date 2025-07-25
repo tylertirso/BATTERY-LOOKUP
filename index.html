@@ -11,25 +11,31 @@
       margin: 0; 
       padding: 0; 
     }
-    .container { 
-      max-width: 500px; 
-      margin: 60px auto; 
-      background: #fff; 
-      border-radius: 10px; 
-      box-shadow: 0 2px 8px #0001; 
-      padding: 32px; 
-      border: 2px solid #ff9800; 
+    .container {
+      max-width: 500px;
+      margin: 60px auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px #0001;
+      padding: 32px;
+      border: 2px solid #ff9800;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     h1 { text-align: center; color: #ff9800; }
-    .search-bar { 
-      width: 100%; 
-      padding: 12px; 
-      font-size: 1.1em; 
-      border: 2px solid #90caf9; 
-      border-radius: 5px; 
-      margin-bottom: 8px; 
-      background: #f7fbff; 
-      transition: border 0.2s; 
+    .search-bar {
+      width: auto;
+      min-width: 380px;
+      max-width: 100%;
+      padding: 12px;
+      font-size: 1.1em;
+      border: 2px solid #90caf9;
+      border-radius: 5px;
+      margin: 0 auto 8px auto;
+      background: #f7fbff;
+      transition: border 0.2s;
+      display: block;
     }
     .search-bar:focus { border: 2px solid #ff9800; outline: none; }
     .suggestions { 
@@ -103,19 +109,28 @@
       position: fixed;
       top: 20px;
       left: 20px;
-      width: 30px;
-      height: 30px;
+      width: 38px;
+      height: 38px;
       cursor: pointer;
       z-index: 1000;
       display: flex;
       flex-direction: column;
       justify-content: space-around;
+      background: #ff9800;
+      border-radius: 8px;
+      border: 2px solid #1565c0;
+      box-shadow: 0 2px 8px #0002;
+      align-items: center;
+    }
+    .hamburger:hover {
+      background: #f57c00;
+      border-color: #0d47a1;
     }
     .hamburger span {
       display: block;
       height: 3px;
       width: 100%;
-      background: #ff9800;
+      background: #fff;
       border-radius: 2px;
       transition: 0.3s;
     }
@@ -192,7 +207,6 @@
     }
     
     @media (max-width: 600px) { 
-      .container { padding: 16px; margin: 80px auto 60px; }
       .sidebar { width: 250px; left: -250px; }
     }
   </style>
@@ -498,7 +512,7 @@ function clearAllInputsAndResults() {
   document.getElementById('batteryResult').style.display = 'none';
 }
 
-// Page 1: Device to Battery lookup (original functionality)
+// Page 1: Device to Battery lookup
 const deviceInput = document.getElementById('deviceInput');
 const deviceSuggestionsDiv = document.getElementById('deviceSuggestions');
 const deviceResultDiv = document.getElementById('deviceResult');
@@ -514,7 +528,7 @@ function showDeviceSuggestions(suggestions) {
     deviceSuggestionsDiv.style.display = 'none';
     return;
   }
-  deviceSuggestionsDiv.innerHTML = suggestions.map(s => `<div class="suggestion">${s.device}</div>`).join('');
+  deviceSuggestionsDiv.innerHTML = suggestions.map(s => `<div class=\"suggestion\">${s.device}</div>`).join('');
   deviceSuggestionsDiv.style.display = 'block';
 }
 
@@ -532,7 +546,6 @@ function showDeviceResult(device, battery) {
   // Create clickable battery links group
   const batteries = battery.split(', ').map(b => b.trim());
   const batteryLinks = batteries.map(bat => {
-    const cleanBat = bat.replace(/^Type\s+/, '').replace(/^\(/, '').replace(/\)$/, '');
     return `<span class='link-group battery-link'>
       ${bat}
       <span class='link-label'>[</span>
@@ -580,7 +593,7 @@ deviceInput.addEventListener('keydown', function(e) {
   }
 });
 
-// Page 2: Battery to Device lookup (new functionality)
+// Page 2: Battery to Device lookup
 const batteryInput = document.getElementById('batteryInput');
 const batterySuggestionsDiv = document.getElementById('batterySuggestions');
 const batteryResultDiv = document.getElementById('batteryResult');
@@ -596,7 +609,7 @@ function showBatterySuggestions(suggestions) {
     batterySuggestionsDiv.style.display = 'none';
     return;
   }
-  batterySuggestionsDiv.innerHTML = suggestions.map(s => `<div class="suggestion">${s}</div>`).join('');
+  batterySuggestionsDiv.innerHTML = suggestions.map(s => `<div class=\"suggestion\">${s}</div>`).join('');
   batterySuggestionsDiv.style.display = 'block';
 }
 
