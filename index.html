@@ -223,6 +223,8 @@
   <div class="sidebar" id="sidebar">
     <div class="sidebar-item active" data-page="battery-lookup">Battery Compatibility Lookup</div>
     <div class="sidebar-item" data-page="device-lookup">Device Compatibility Lookup</div>
+    <div class="sidebar-item" data-page="emc-lookup">EMC Lookup</div>
+    <div class="sidebar-item" data-page="macbook-model-lookup">MacBook Model Lookup</div>
   </div>
   
   <!-- Overlay -->
@@ -252,6 +254,30 @@
     </div>
   </div>
   
+  <!-- Page 3: EMC Lookup -->
+  <div class="page" id="emc-lookup">
+    <div class="container">
+      <h1>EMC Lookup</h1>
+      <div class="relative">
+        <input type="text" id="emcInput" class="search-bar" placeholder="Type EMC number..." autocomplete="off" />
+        <div id="emcSuggestions" class="suggestions" style="display:none;"></div>
+      </div>
+      <div id="emcResult" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Page 4: MacBook Model Lookup -->
+  <div class="page" id="macbook-model-lookup">
+    <div class="container">
+      <h1>MacBook Model Lookup</h1>
+      <div class="relative">
+        <input type="text" id="macbookModelInput" class="search-bar" placeholder="Type MacBook model number (e.g. A1466)..." autocomplete="off" />
+        <div id="macbookModelSuggestions" class="suggestions" style="display:none;"></div>
+      </div>
+      <div id="macbookModelResult" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
   <script>
 // Data: Combined ThinkPad E, T, ThinkBook, Dell, and all X1 Carbon/Yoga/Yoga models
 const data = `
@@ -415,6 +441,42 @@ const data = `
 (Device: Dell XPS 15 L501X Battery Compatibility: Type 312-1123)
 `;
 
+// MacBook EMC Data
+const emcData = [
+  { deviceName: 'MacBook Air (13", 2017)', emcNumber: '3178', modelNumber: 'A1466', batteryModel: 'A1496' },
+  { deviceName: 'MacBook Pro (13", 2017, 2 TB3)', emcNumber: '3164', modelNumber: 'A1708', batteryModel: 'A1713' },
+  { deviceName: 'MacBook Pro (13", 2017, 4 TB3)', emcNumber: '3163', modelNumber: 'A1706', batteryModel: 'A1819' },
+  { deviceName: 'MacBook Pro (15", 2017)', emcNumber: '3162', modelNumber: 'A1707', batteryModel: 'A1820' },
+  { deviceName: 'MacBook Air (Retina, 13", 2018)', emcNumber: '3184', modelNumber: 'A1932', batteryModel: 'A1965' },
+  { deviceName: 'MacBook Pro (13", 2018, 4 TB3)', emcNumber: '3214', modelNumber: 'A1989', batteryModel: 'A1964' },
+  { deviceName: 'MacBook Pro (15", 2018)', emcNumber: '3215', modelNumber: 'A1990', batteryModel: 'A1953' },
+  { deviceName: 'MacBook Air (Retina, 13", 2019)', emcNumber: '3184', modelNumber: 'A1932', batteryModel: 'A1965' },
+  { deviceName: 'MacBook Pro (13", 2019, 2 TB3)', emcNumber: '3348', modelNumber: 'A2159', batteryModel: 'A2171' },
+  { deviceName: 'MacBook Pro (13", 2019, 4 TB3)', emcNumber: '3358', modelNumber: 'A1989', batteryModel: 'A1964' },
+  { deviceName: 'MacBook Pro (15", 2019)', emcNumber: '3359', modelNumber: 'A1990', batteryModel: 'A1953' },
+  { deviceName: 'MacBook Pro (16", 2019)', emcNumber: '3347', modelNumber: 'A2141', batteryModel: 'A2113' },
+  { deviceName: 'MacBook Air (Retina, 13", 2020)', emcNumber: '3302', modelNumber: 'A2179', batteryModel: 'A2171' },
+  { deviceName: 'MacBook Air (M1, 2020)', emcNumber: '3598', modelNumber: 'A2337', batteryModel: 'A2389' },
+  { deviceName: 'MacBook Pro (13", 2020, 2 TB3)', emcNumber: '3456', modelNumber: 'A2289', batteryModel: 'A2171' },
+  { deviceName: 'MacBook Pro (13", 2020, 4 TB3)', emcNumber: '3462', modelNumber: 'A2251', batteryModel: 'A2171' },
+  { deviceName: 'MacBook Pro (13", M1, 2020)', emcNumber: '3578', modelNumber: 'A2338', batteryModel: 'A2338' },
+  { deviceName: 'MacBook Pro (14", 2021)', emcNumber: '3650', modelNumber: 'A2442', batteryModel: 'A2519' },
+  { deviceName: 'MacBook Pro (16", 2021)', emcNumber: '3651', modelNumber: 'A2485', batteryModel: 'A2527' },
+  { deviceName: 'MacBook Air (M2, 2022)', emcNumber: '4074', modelNumber: 'A2681', batteryModel: 'A2681' },
+  { deviceName: 'MacBook Pro (13", M2, 2022)', emcNumber: '4028', modelNumber: 'A2338', batteryModel: 'A2338' },
+  { deviceName: 'MacBook Air (15", M2, 2023)', emcNumber: '4300', modelNumber: 'A2941', batteryModel: 'A2829' },
+  { deviceName: 'MacBook Pro (14", 2023, M2 Pro/Max)', emcNumber: '4356', modelNumber: 'A2779', batteryModel: 'A2519' },
+  { deviceName: 'MacBook Pro (16", 2023, M2 Pro/Max)', emcNumber: '4357', modelNumber: 'A2780', batteryModel: 'A2527' },
+  { deviceName: 'MacBook Air (13", M3, 2024)', emcNumber: 'TBA', modelNumber: 'A3113', batteryModel: 'TBA' },
+  { deviceName: 'MacBook Air (15", M3, 2024)', emcNumber: 'TBA', modelNumber: 'A3114', batteryModel: 'TBA' },
+  { deviceName: 'MacBook Pro (14", 2024, M3 Pro/Max)', emcNumber: 'TBA', modelNumber: 'A3121', batteryModel: 'TBA' },
+  { deviceName: 'MacBook Pro (16", 2024, M3 Pro/Max)', emcNumber: 'TBA', modelNumber: 'A3122', batteryModel: 'TBA' },
+  { deviceName: 'MacBook Air (13", M4, 2025)', emcNumber: 'TBA', modelNumber: 'A3221', batteryModel: 'TBA' },
+  { deviceName: 'MacBook Air (15", M4, 2025)', emcNumber: 'TBA', modelNumber: 'A3222', batteryModel: 'TBA' },
+  { deviceName: 'MacBook Pro (14", 2025, M4 Pro/Max)', emcNumber: 'TBA', modelNumber: 'A3231', batteryModel: 'TBA' },
+  { deviceName: 'MacBook Pro (16", 2025, M4 Pro/Max)', emcNumber: 'TBA', modelNumber: 'A3232', batteryModel: 'TBA' }
+];
+
 // Helper functions to create eBay and Amazon search URLs
 function createEbayUrl(searchTerm) {
   const cleanTerm = searchTerm.replace(/^Type\s+/, '').replace(/^\(/, '').replace(/\)$/, '');
@@ -429,6 +491,12 @@ function createDeviceEbayUrl(deviceName) {
 }
 function createDeviceAmazonUrl(deviceName) {
   return `https://www.amazon.com/s?k=${encodeURIComponent(deviceName + ' laptop')}`;
+}
+function createMacBookEbayUrl(deviceName) {
+  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(deviceName)}`;
+}
+function createMacBookAmazonUrl(deviceName) {
+  return `https://www.amazon.com/s?k=${encodeURIComponent(deviceName)}`;
 }
 
 // Parse data into arrays
@@ -462,6 +530,12 @@ while ((match = regex.exec(data)) !== null) {
 
 // Get unique battery parts for suggestions
 const uniqueBatteries = [...new Set(batteryDevicePairs.map(pair => pair.battery))].sort();
+
+// Get unique EMC numbers for suggestions (excluding TBA)
+const uniqueEMCs = [...new Set(emcData.filter(item => item.emcNumber !== 'TBA').map(item => item.emcNumber))].sort();
+
+// Get unique MacBook model numbers for suggestions
+const uniqueMacBookModels = [...new Set(emcData.map(item => item.modelNumber))].sort();
 
 // Menu functionality
 const hamburger = document.getElementById('hamburger');
@@ -506,10 +580,16 @@ sidebarItems.forEach(item => {
 function clearAllInputsAndResults() {
   document.getElementById('deviceInput').value = '';
   document.getElementById('batteryInput').value = '';
+  document.getElementById('emcInput').value = '';
+  document.getElementById('macbookModelInput').value = '';
   document.getElementById('deviceSuggestions').style.display = 'none';
   document.getElementById('batterySuggestions').style.display = 'none';
+  document.getElementById('emcSuggestions').style.display = 'none';
+  document.getElementById('macbookModelSuggestions').style.display = 'none';
   document.getElementById('deviceResult').style.display = 'none';
   document.getElementById('batteryResult').style.display = 'none';
+  document.getElementById('emcResult').style.display = 'none';
+  document.getElementById('macbookModelResult').style.display = 'none';
 }
 
 // Page 1: Device to Battery lookup
@@ -673,11 +753,175 @@ batteryInput.addEventListener('keydown', function(e) {
   }
 });
 
+// Page 3: EMC Lookup
+const emcInput = document.getElementById('emcInput');
+const emcSuggestionsDiv = document.getElementById('emcSuggestions');
+const emcResultDiv = document.getElementById('emcResult');
+
+function filterEMCSuggestions(query) {
+  if (!query) return [];
+  query = query.toLowerCase();
+  return uniqueEMCs.filter(emc => emc.toLowerCase().includes(query));
+}
+
+function showEMCSuggestions(suggestions) {
+  if (suggestions.length === 0) {
+    emcSuggestionsDiv.style.display = 'none';
+    return;
+  }
+  emcSuggestionsDiv.innerHTML = suggestions.map(s => `<div class=\"suggestion\">${s}</div>`).join('');
+  emcSuggestionsDiv.style.display = 'block';
+}
+
+function showEMCResult(emcNumber) {
+  const found = emcData.find(item => item.emcNumber === emcNumber);
+  if (found) {
+    // Create clickable device link group
+    const deviceLinkGroup = `
+      <span class='link-group'>
+        <span class='link-label'>[</span>
+        <a href="${createMacBookEbayUrl(found.deviceName)}" target="_blank" class="clickable-link">eBay</a>
+        <span class='link-label'>|</span>
+        <a href="${createMacBookAmazonUrl(found.deviceName)}" target="_blank" class="clickable-link">Amazon</a>
+        <span class='link-label'>]</span>
+      </span>
+    `;
+    
+    // Create clickable battery link group
+    const batteryLinkGroup = found.batteryModel !== 'TBA' ? `
+      <span class='link-group'>
+        <span class='link-label'>[</span>
+        <a href="${createEbayUrl(found.batteryModel)}" target="_blank" class="clickable-link">eBay</a>
+        <span class='link-label'>|</span>
+        <a href="${createAmazonUrl(found.batteryModel)}" target="_blank" class="clickable-link">Amazon</a>
+        <span class='link-label'>]</span>
+      </span>
+    ` : '';
+    
+    emcResultDiv.innerHTML = `
+      <span class='label'>EMC Number:</span> ${found.emcNumber}<br>
+      <span class='label'>Device Name:</span> ${found.deviceName} ${deviceLinkGroup}<br>
+      <span class='label'>Model Number:</span> ${found.modelNumber}<br>
+      <span class='label'>Battery Model:</span> ${found.batteryModel} ${batteryLinkGroup}
+    `;
+    emcResultDiv.style.display = 'block';
+  } else {
+    emcResultDiv.innerHTML = `<span style='color:#b00'>No information found for EMC number: ${emcNumber}</span>`;
+    emcResultDiv.style.display = 'block';
+  }
+}
+
+emcInput.addEventListener('input', function() {
+  const query = this.value;
+  const suggestions = filterEMCSuggestions(query).slice(0, 8);
+  showEMCSuggestions(suggestions);
+  emcResultDiv.style.display = 'none';
+});
+
+emcSuggestionsDiv.addEventListener('mousedown', function(e) {
+  if (e.target.classList.contains('suggestion')) {
+    const selectedEMC = e.target.textContent;
+    emcInput.value = selectedEMC;
+    showEMCResult(selectedEMC);
+    emcSuggestionsDiv.style.display = 'none';
+  }
+});
+
+emcInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const query = this.value.trim();
+    showEMCResult(query);
+    emcSuggestionsDiv.style.display = 'none';
+  }
+});
+
+// Page 4: MacBook Model Lookup
+const macbookModelInput = document.getElementById('macbookModelInput');
+const macbookModelSuggestionsDiv = document.getElementById('macbookModelSuggestions');
+const macbookModelResultDiv = document.getElementById('macbookModelResult');
+
+function filterMacBookModelSuggestions(query) {
+  if (!query) return [];
+  query = query.toLowerCase();
+  return uniqueMacBookModels.filter(model => model.toLowerCase().includes(query));
+}
+
+function showMacBookModelSuggestions(suggestions) {
+  if (suggestions.length === 0) {
+    macbookModelSuggestionsDiv.style.display = 'none';
+    return;
+  }
+  macbookModelSuggestionsDiv.innerHTML = suggestions.map(s => `<div class=\"suggestion\">${s}</div>`).join('');
+  macbookModelSuggestionsDiv.style.display = 'block';
+}
+
+function showMacBookModelResult(modelNumber) {
+  const found = emcData.find(item => item.modelNumber === modelNumber);
+  if (found) {
+    // Create clickable device link group
+    const deviceLinkGroup = `
+      <span class='link-group'>
+        <span class='link-label'>[</span>
+        <a href="${createMacBookEbayUrl(found.deviceName)}" target="_blank" class="clickable-link">eBay</a>
+        <span class='link-label'>|</span>
+        <a href="${createMacBookAmazonUrl(found.deviceName)}" target="_blank" class="clickable-link">Amazon</a>
+        <span class='link-label'>]</span>
+      </span>
+    `;
+    // Create clickable battery link group
+    const batteryLinkGroup = found.batteryModel !== 'TBA' ? `
+      <span class='link-group'>
+        <span class='link-label'>[</span>
+        <a href="${createEbayUrl(found.batteryModel)}" target="_blank" class="clickable-link">eBay</a>
+        <span class='link-label'>|</span>
+        <a href="${createAmazonUrl(found.batteryModel)}" target="_blank" class="clickable-link">Amazon</a>
+        <span class='link-label'>]</span>
+      </span>
+    ` : '';
+    macbookModelResultDiv.innerHTML = `
+      <span class='label'>Model Number:</span> ${found.modelNumber}<br>
+      <span class='label'>Device Name:</span> ${found.deviceName} ${deviceLinkGroup}<br>
+      <span class='label'>EMC Number:</span> ${found.emcNumber}<br>
+      <span class='label'>Battery Model:</span> ${found.batteryModel} ${batteryLinkGroup}
+    `;
+    macbookModelResultDiv.style.display = 'block';
+  } else {
+    macbookModelResultDiv.innerHTML = `<span style='color:#b00'>No information found for model number: ${modelNumber}</span>`;
+    macbookModelResultDiv.style.display = 'block';
+  }
+}
+
+macbookModelInput.addEventListener('input', function() {
+  const query = this.value;
+  const suggestions = filterMacBookModelSuggestions(query).slice(0, 8);
+  showMacBookModelSuggestions(suggestions);
+  macbookModelResultDiv.style.display = 'none';
+});
+
+macbookModelSuggestionsDiv.addEventListener('mousedown', function(e) {
+  if (e.target.classList.contains('suggestion')) {
+    const selectedModel = e.target.textContent;
+    macbookModelInput.value = selectedModel;
+    showMacBookModelResult(selectedModel);
+    macbookModelSuggestionsDiv.style.display = 'none';
+  }
+});
+
+macbookModelInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const query = this.value.trim();
+    showMacBookModelResult(query);
+    macbookModelSuggestionsDiv.style.display = 'none';
+  }
+});
+
 // Hide suggestions when clicking outside
 window.addEventListener('click', function(e) {
   if (!document.querySelector('.relative').contains(e.target)) {
     deviceSuggestionsDiv.style.display = 'none';
     batterySuggestionsDiv.style.display = 'none';
+    emcSuggestionsDiv.style.display = 'none';
+    macbookModelSuggestionsDiv.style.display = 'none';
   }
 });
   </script>
